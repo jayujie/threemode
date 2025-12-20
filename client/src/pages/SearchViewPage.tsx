@@ -138,9 +138,9 @@ const SearchViewPage: React.FC = () => {
     const f = detail.fingerFeatures;
     const images = [
       { title: "指纹", path: f.fingerprint_path },
-      { title: "指节纹", path: f.finger_joint_path },
       { title: "指静脉", path: f.finger_vein_path },
-      { title: "指静脉二值", path: f.vein_bin_path }
+      { title: "指静脉二值", path: f.vein_bin_path },
+      { title: "指节纹", path: f.finger_joint_path }
     ].filter(img => img.path);
 
     return (
@@ -160,7 +160,7 @@ const SearchViewPage: React.FC = () => {
                     />
                   </div>
                 }
-                bodyStyle={{ padding: 12, textAlign: 'center' }}
+                styles={{ body: { padding: 12, textAlign: 'center' } }}
               >
                 <Card.Meta title={img.title} />
               </Card>

@@ -159,7 +159,7 @@ class FingerRecognition:
             # 尝试使用默认的模型路径 
             default_model_path = r"C:\Users\28145\Desktop\py\model_epoch_3.pth"
             # 备用路径：项目中的模型文件
-            project_model_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "models", "model_epoch_3.pth")
+            project_model_path = os.path.join(os.path.dirname(__file__), "..", "..", "models", "model_epoch_3.pth")
             
             if os.path.exists(default_model_path):
                 model_path = default_model_path

@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import { config } from "../config/config";
 import { hashPassword, comparePassword } from "../utils/password";
 import { hashFile } from "../utils/fingerHash";
+import { binarizeVeinImage } from "../utils/veinBinarize";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
 import {
   createUser,
   findUserByUsername,
@@ -34,17 +37,26 @@ export async function register(req: Request, res: Response) {
     };
 
     const fingerprintFile = files?.["fingerprint"]?.[0];
-    const veinAugFile = files?.["vein_aug"]?.[0];
-    const veinBinFile = files?.["vein_bin"]?.[0];
+    const veinFile = files?.["vein"]?.[0];
     const knuckleFile = files?.["knuckle"]?.[0];
 
-    if (!fingerprintFile || !veinAugFile || !veinBinFile || !knuckleFile) {
-      return res.status(400).json({ message: "必须上传四种手指模态图片" });
+    if (!fingerprintFile || !veinFile || !knuckleFile) {
+      return res.status(400).json({ message: "必须上传三种手指模态图片（指纹、指静脉、指节纹）" });
+    }
+
+    const veinBinFilename = `vein_bin_${uuidv4()}${path.extname(veinFile.filename)}`;
+    const veinBinPath = path.join(path.dirname(veinFile.path), veinBinFilename);
+    
+    try {
+      await binarizeVeinImage(veinFile.path, veinBinPath);
+    } catch (err) {
+      console.error("指静脉二值化失败:", err);
+      return res.status(500).json({ message: "指静脉图像处理失败" });
     }
 
     const fingerprintHash = await hashFile(fingerprintFile.path);
-    const veinAugHash = await hashFile(veinAugFile.path);
-    const veinBinHash = await hashFile(veinBinFile.path);
+    const veinAugHash = await hashFile(veinFile.path);
+    const veinBinHash = await hashFile(veinBinPath);
     const knuckleHash = await hashFile(knuckleFile.path);
 
     const existedUserId = await findUserIdByAnyFingerHash({
@@ -74,8 +86,8 @@ export async function register(req: Request, res: Response) {
       userId: user.id,
       fingerprintPath: fingerprintFile.filename,
       fingerJointPath: knuckleFile.filename,
-      fingerVeinPath: veinAugFile.filename,
-      veinBinPath: veinBinFile.filename,
+      fingerVeinPath: veinFile.filename,
+      veinBinPath: veinBinFilename,
       fingerprintHash,
       fingerJointHash: knuckleHash,
       fingerVeinHash: veinAugHash,
@@ -109,8 +121,7 @@ export async function login(req: Request, res: Response) {
     const files = req.files as { [field: string]: Express.Multer.File[] };
 
     const fingerprintFile = files?.["fingerprint"]?.[0];
-    const veinAugFile = files?.["vein_aug"]?.[0];
-    const veinBinFile = files?.["vein_bin"]?.[0];
+    const veinFile = files?.["vein"]?.[0];
     const knuckleFile = files?.["knuckle"]?.[0];
 
     if (!username || !password) {
@@ -127,18 +138,25 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ message: "用户名或密码错误" });
     }
 
-    // 如果上传了图片则验证手指模态（支持部分或全部4张图片）
-    if (fingerprintFile || veinAugFile || veinBinFile || knuckleFile) {
+    // 如果上传了图片则验证手指模态（支持3张图片）
+    if (fingerprintFile || veinFile || knuckleFile) {
       const hashes: any = {};
       
       if (fingerprintFile) {
         hashes.fingerprintHash = await hashFile(fingerprintFile.path);
       }
-      if (veinAugFile) {
-        hashes.fingerVeinHash = await hashFile(veinAugFile.path);
-      }
-      if (veinBinFile) {
-        hashes.veinBinHash = await hashFile(veinBinFile.path);
+      if (veinFile) {
+        hashes.fingerVeinHash = await hashFile(veinFile.path);
+        
+        // 自动二值化指静脉图像并计算哈希
+        const veinBinFilename = `vein_bin_${uuidv4()}${path.extname(veinFile.filename)}`;
+        const veinBinPath = path.join(path.dirname(veinFile.path), veinBinFilename);
+        try {
+          await binarizeVeinImage(veinFile.path, veinBinPath);
+          hashes.veinBinHash = await hashFile(veinBinPath);
+        } catch (err) {
+          console.error("登录时指静脉二值化失败:", err);
+        }
       }
       if (knuckleFile) {
         hashes.fingerJointHash = await hashFile(knuckleFile.path);

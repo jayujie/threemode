@@ -31,7 +31,7 @@ const upload = multer({
   storage,
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 4 // 最多4个文件
+    files: 3 // 最多3个文件
   },
   fileFilter: (_req, file, cb) => {
     // 只允许图片文件
@@ -55,20 +55,18 @@ router.post(
   authMiddleware,
   upload.fields([
     { name: "fingerprint", maxCount: 1 },
-    { name: "vein_aug", maxCount: 1 },
-    { name: "vein_bin", maxCount: 1 },
+    { name: "vein", maxCount: 1 },
     { name: "knuckle", maxCount: 1 },
   ]),
   registerPythonFeatures
 );
 
-// Python模态登录
+// Python模态登录（指静脉二值化自动处理）
 router.post(
   "/login",
   upload.fields([
     { name: "fingerprint", maxCount: 1 },
-    { name: "vein_aug", maxCount: 1 },
-    { name: "vein_bin", maxCount: 1 },
+    { name: "vein", maxCount: 1 },
     { name: "knuckle", maxCount: 1 },
   ]),
   pythonLogin

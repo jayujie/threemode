@@ -31,13 +31,12 @@ const upload = multer({ storage });
 
 const router = Router();
 
-// 普通用户注册：四种手指模态 + 基本信息
+// 普通用户注册：三种手指模态 + 基本信息（指静脉二值化自动处理）
 router.post(
   "/register",
   upload.fields([
     { name: "fingerprint", maxCount: 1 },
-    { name: "vein_aug", maxCount: 1 },
-    { name: "vein_bin", maxCount: 1 },
+    { name: "vein", maxCount: 1 },
     { name: "knuckle", maxCount: 1 },
   ]),
   register
@@ -48,8 +47,7 @@ router.post(
   "/login",
   upload.fields([
     { name: "fingerprint", maxCount: 1 },
-    { name: "vein_aug", maxCount: 1 },
-    { name: "vein_bin", maxCount: 1 },
+    { name: "vein", maxCount: 1 },
     { name: "knuckle", maxCount: 1 },
   ]),
   login

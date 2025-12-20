@@ -18,7 +18,6 @@ import {
 import { 
   UserOutlined, 
   AppstoreOutlined, 
-  ExperimentOutlined, 
   SafetyCertificateOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -26,7 +25,6 @@ import {
   StopOutlined
 } from "@ant-design/icons";
 import http from "../api/http";
-import PythonFeatureUpload from "../components/PythonFeatureUpload";
 
 const { Title, Text } = Typography;
 const { useToken } = theme;
@@ -106,94 +104,92 @@ const UserDashboard: React.FC = () => {
       key: "features",
       label: (
         <span>
-          <AppstoreOutlined /> 传统模态特征
+          <AppstoreOutlined /> 模态特征
         </span>
       ),
       children: (
         <div style={{ padding: '24px 0' }}>
           {features ? (
             <Row gutter={[24, 24]}>
-              <Col xs={24} sm={8}>
+              <Col xs={24} sm={6}>
                 <Card 
                   hoverable 
                   cover={
-                    <div style={{ height: 200, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
+                    <div style={{ height: 180, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
                       <Image
-                        height={200}
+                        height={180}
                         src={`${IMAGE_BASE_URL}${features.fingerprintPath}`}
                         alt="指纹"
                         style={{ objectFit: 'contain' }}
                       />
                     </div>
                   }
-                  bodyStyle={{ padding: 12, textAlign: 'center' }}
+                  styles={{ body: { padding: 12, textAlign: 'center' } }}
                 >
                   <Card.Meta title="指纹特征" description="Fingerprint" />
                 </Card>
               </Col>
-              <Col xs={24} sm={8}>
+              <Col xs={24} sm={6}>
                 <Card 
                   hoverable 
                   cover={
-                    <div style={{ height: 200, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
+                    <div style={{ height: 180, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
                       <Image
-                        height={200}
-                        src={`${IMAGE_BASE_URL}${features.fingerJointPath}`}
-                        alt="指节纹"
-                        style={{ objectFit: 'contain' }}
-                      />
-                    </div>
-                  }
-                  bodyStyle={{ padding: 12, textAlign: 'center' }}
-                >
-                  <Card.Meta title="指节纹特征" description="Finger Joint" />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card 
-                  hoverable 
-                  cover={
-                    <div style={{ height: 200, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
-                      <Image
-                        height={200}
+                        height={180}
                         src={`${IMAGE_BASE_URL}${features.fingerVeinPath}`}
                         alt="指静脉"
                         style={{ objectFit: 'contain' }}
                       />
                     </div>
                   }
-                  bodyStyle={{ padding: 12, textAlign: 'center' }}
+                  styles={{ body: { padding: 12, textAlign: 'center' } }}
                 >
                   <Card.Meta title="指静脉特征" description="Finger Vein" />
+                </Card>
+              </Col>
+              <Col xs={24} sm={6}>
+                <Card 
+                  hoverable 
+                  cover={
+                    <div style={{ height: 180, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
+                      <Image
+                        height={180}
+                        src={`${IMAGE_BASE_URL}${features.veinBinPath}`}
+                        alt="指静脉二值化"
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </div>
+                  }
+                  styles={{ body: { padding: 12, textAlign: 'center' } }}
+                >
+                  <Card.Meta title="指静脉二值化" description="Vein Binarized" />
+                </Card>
+              </Col>
+              <Col xs={24} sm={6}>
+                <Card 
+                  hoverable 
+                  cover={
+                    <div style={{ height: 180, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' }}>
+                      <Image
+                        height={180}
+                        src={`${IMAGE_BASE_URL}${features.fingerJointPath}`}
+                        alt="指节纹"
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </div>
+                  }
+                  styles={{ body: { padding: 12, textAlign: 'center' } }}
+                >
+                  <Card.Meta title="指节纹特征" description="Finger Joint" />
                 </Card>
               </Col>
             </Row>
           ) : (
             <div style={{ padding: 40, textAlign: "center", background: '#f5f5f5', borderRadius: 8 }}>
               <SafetyCertificateOutlined style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }} />
-              <div style={{ color: "#999" }}>暂未获取到传统手指模态图片</div>
+              <div style={{ color: "#999" }}>暂未获取到手指模态图片</div>
             </div>
           )}
-        </div>
-      ),
-    },
-    {
-      key: "python-features",
-      label: (
-        <span>
-          <ExperimentOutlined /> Python模态特征
-        </span>
-      ),
-      children: (
-        <div style={{ marginTop: 16 }}>
-          <Alert 
-             message="高级模态特征管理" 
-             description="在此处上传和管理用于Python深度学习模型的指纹、指静脉及指节纹特征数据。" 
-             type="info" 
-             showIcon 
-             style={{ marginBottom: 24 }}
-          />
-          <PythonFeatureUpload />
         </div>
       ),
     },
@@ -257,10 +253,7 @@ const UserDashboard: React.FC = () => {
           <Col flex="none">
              <Row gutter={32}>
                <Col>
-                 <Statistic title="特征数据" value={features ? 3 : 0} prefix={<AppstoreOutlined />} />
-               </Col>
-               <Col>
-                 <Statistic title="Python模型" value={1} prefix={<ExperimentOutlined />} />
+                 <Statistic title="模态特征" value={features ? 4 : 0} prefix={<AppstoreOutlined />} />
                </Col>
              </Row>
           </Col>
@@ -273,7 +266,7 @@ const UserDashboard: React.FC = () => {
           borderRadius: 16,
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
         }}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         <Tabs
           defaultActiveKey="info"

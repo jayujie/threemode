@@ -11,17 +11,15 @@ import {
   Divider,
   App,
   theme,
-  Steps
 } from "antd";
 import { 
-  UploadOutlined, 
   UserOutlined, 
   LockOutlined, 
-  MailOutlined, 
-  PhoneOutlined, 
+  UploadOutlined, 
+  MailOutlined,
+  PhoneOutlined,
   IdcardOutlined,
-  SafetyCertificateOutlined,
-  ArrowLeftOutlined
+  SafetyCertificateOutlined 
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import http from "../api/http";
@@ -33,37 +31,34 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState<Record<string, any[]>>({});
   const { message } = App.useApp();
+  const [files, setFiles] = useState<Record<string, any[]>>({});
   const { token } = useToken();
-  const [currentStep, setCurrentStep] = useState(0);
 
-  const handleSubmit = async (values: any) => {
-    const requiredFields = [
-      "fingerprint",
-      "vein_aug", 
-      "vein_bin",
-      "knuckle",
-    ];
-    for (const field of requiredFields) {
-      if (!files[field] || !files[field].length) {
-        message.warning("请上传四种手指模态图片");
-        return;
-      }
-    }
-
+  const handleRegister = async (values: any) => {
     const formData = new FormData();
-    Object.entries(values).forEach(([k, v]) => formData.append(k, v as any));
-    requiredFields.forEach((field) => {
-      formData.append(field, files[field][0].originFileObj);
-    });
+    formData.append("username", values.username);
+    formData.append("password", values.password);
+    if (values.realName) formData.append("realName", values.realName);
+    if (values.email) formData.append("email", values.email);
+    if (values.phone) formData.append("phone", values.phone);
+    
+    if (files.fingerprint?.length) {
+      formData.append("fingerprint", files.fingerprint[0].originFileObj);
+    }
+    if (files.vein?.length) {
+      formData.append("vein", files.vein[0].originFileObj);
+    }
+    if (files.knuckle?.length) {
+      formData.append("knuckle", files.knuckle[0].originFileObj);
+    }
 
     try {
       setLoading(true);
-      const res = await http.post("/api/auth/register", formData, {
+      await http.post("/api/auth/register", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      message.success(res.data?.message || "注册成功，等待审核");
+      message.success("注册成功，请等待管理员审核");
       navigate("/login");
     } catch (e: any) {
       message.error(e?.response?.data?.message || "注册失败");
@@ -103,14 +98,14 @@ const RegisterPage: React.FC = () => {
       >
         <Row>
           {/* 左侧视觉区 */}
-          <Col xs={0} md={9} style={{ position: 'relative', background: '#001529' }}>
+          <Col xs={0} md={10} style={{ position: 'relative', background: '#001529' }}>
             <div style={{
               position: 'absolute',
               top: 0, left: 0, width: '100%', height: '100%',
               backgroundImage: 'url(https://picsum.photos/2070/1380?random=2)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              opacity: 0.5,
+              opacity: 0.6,
               mixBlendMode: 'overlay'
             }} />
             <div style={{
@@ -121,140 +116,114 @@ const RegisterPage: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center',
               padding: 40,
-              background: 'linear-gradient(180deg, rgba(24,144,255,0.85) 0%, rgba(0,21,41,0.95) 100%)',
+              background: 'linear-gradient(180deg, rgba(82,196,26,0.8) 0%, rgba(0,21,41,0.9) 100%)',
             }}>
-              <IdcardOutlined style={{ fontSize: 48, color: '#fff', marginBottom: 24 }} />
+              <SafetyCertificateOutlined style={{ fontSize: 48, color: '#fff', marginBottom: 24 }} />
               <Title level={2} style={{ color: '#fff', margin: '0 0 16px' }}>
-                加入我们<br />开启安全之旅
+                创建您的<br />安全账户
               </Title>
               <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, lineHeight: 1.8 }}>
-                注册成为新用户，体验多模态生物识别技术。
+                注册后可享受多模态生物特征识别带来的便捷与安全体验。
               </Text>
-              
-              <div style={{ marginTop: 48 }}>
-                 <Steps 
-                   direction="vertical" 
-                   size="small"
-                   current={currentStep}
-                   items={[
-                     { title: <span style={{ color: '#fff' }}>基本信息</span>, description: <span style={{ color: 'rgba(255,255,255,0.6)' }}>填写个人账号资料</span> },
-                     { title: <span style={{ color: '#fff' }}>生物特征</span>, description: <span style={{ color: 'rgba(255,255,255,0.6)' }}>上传手指模态图片</span> },
-                     { title: <span style={{ color: '#fff' }}>提交审核</span>, description: <span style={{ color: 'rgba(255,255,255,0.6)' }}>等待管理员确认</span> },
-                   ]}
-                 />
-              </div>
             </div>
           </Col>
 
           {/* 右侧表单区 */}
-          <Col xs={24} md={15}>
-            <div style={{ padding: '40px 50px', maxHeight: '800px', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                <div>
-                  <Title level={3} style={{ marginBottom: 8 }}>创建账号</Title>
-                  <Text type="secondary">请填写以下信息完成注册</Text>
-                </div>
-                <Button 
-                  type="text" 
-                  icon={<ArrowLeftOutlined />} 
-                  onClick={() => navigate('/login')}
-                  style={{ color: token.colorTextSecondary }}
-                >
-                  返回登录
-                </Button>
+          <Col xs={24} md={14}>
+            <div style={{ padding: '40px 60px' }}>
+              <div style={{ marginBottom: 24 }}>
+                <Title level={3} style={{ marginBottom: 8 }}>账号注册</Title>
+                <Text type="secondary">填写信息，创建您的专属账户</Text>
               </div>
 
               <Form
+                form={form}
                 layout="vertical"
                 size="large"
-                onFinish={handleSubmit}
-                onValuesChange={(_, allValues) => {
-                   // 简单的步骤判断逻辑
-                   if (allValues.username && allValues.password && allValues.realName) {
-                     setCurrentStep(1);
-                   }
-                }}
+                onFinish={handleRegister}
+                requiredMark={false}
               >
-                <Divider orientation="left" style={{ borderColor: token.colorBorderSecondary }}>
-                  <Text strong style={{ fontSize: 14, color: token.colorPrimary }}>01. 基本资料</Text>
-                </Divider>
-
                 <Row gutter={16}>
                   <Col span={12}>
                     <Form.Item
                       name="username"
                       rules={[{ required: true, message: "请输入用户名" }]}
                     >
-                      <Input prefix={<UserOutlined style={{ color: token.colorTextQuaternary }} />} placeholder="用户名" />
+                      <Input 
+                        prefix={<UserOutlined style={{ color: token.colorTextQuaternary }} />} 
+                        placeholder="用户名" 
+                        style={{ borderRadius: 8 }}
+                      />
                     </Form.Item>
                   </Col>
                   <Col span={12}>
                     <Form.Item
-                      name="password"
-                      rules={[{ required: true, message: "请输入密码" }]}
+                      name="realName"
                     >
-                      <Input.Password prefix={<LockOutlined style={{ color: token.colorTextQuaternary }} />} placeholder="密码" />
+                      <Input 
+                        prefix={<IdcardOutlined style={{ color: token.colorTextQuaternary }} />} 
+                        placeholder="真实姓名（选填）" 
+                        style={{ borderRadius: 8 }}
+                      />
                     </Form.Item>
                   </Col>
                 </Row>
 
+                <Form.Item
+                  name="password"
+                  rules={[{ required: true, message: "请输入密码" }]}
+                >
+                  <Input.Password 
+                    prefix={<LockOutlined style={{ color: token.colorTextQuaternary }} />} 
+                    placeholder="密码" 
+                    style={{ borderRadius: 8 }}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  name="confirmPassword"
+                  dependencies={['password']}
+                  rules={[
+                    { required: true, message: "请确认密码" },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        if (!value || getFieldValue('password') === value) {
+                          return Promise.resolve();
+                        }
+                        return Promise.reject(new Error('两次输入的密码不一致'));
+                      },
+                    }),
+                  ]}
+                >
+                  <Input.Password 
+                    prefix={<LockOutlined style={{ color: token.colorTextQuaternary }} />} 
+                    placeholder="确认密码" 
+                    style={{ borderRadius: 8 }}
+                  />
+                </Form.Item>
+
                 <Row gutter={16}>
                   <Col span={12}>
-                    <Form.Item name="realName" rules={[{ required: true, message: "请输入姓名" }]}>
-                      <Input prefix={<IdcardOutlined style={{ color: token.colorTextQuaternary }} />} placeholder="真实姓名" />
+                    <Form.Item name="email">
+                      <Input 
+                        prefix={<MailOutlined style={{ color: token.colorTextQuaternary }} />} 
+                        placeholder="邮箱（选填）" 
+                        style={{ borderRadius: 8 }}
+                      />
                     </Form.Item>
                   </Col>
                   <Col span={12}>
                     <Form.Item name="phone">
-                      <Input prefix={<PhoneOutlined style={{ color: token.colorTextQuaternary }} />} placeholder="手机号码" />
+                      <Input 
+                        prefix={<PhoneOutlined style={{ color: token.colorTextQuaternary }} />} 
+                        placeholder="手机号（选填）" 
+                        style={{ borderRadius: 8 }}
+                      />
                     </Form.Item>
                   </Col>
                 </Row>
-                
-                <Form.Item name="email">
-                  <Input prefix={<MailOutlined style={{ color: token.colorTextQuaternary }} />} placeholder="电子邮箱地址" />
-                </Form.Item>
 
-                <Divider orientation="left" style={{ borderColor: token.colorBorderSecondary, marginTop: 32 }}>
-                   <Text strong style={{ fontSize: 14, color: token.colorPrimary }}>02. 生物特征采集</Text>
-                </Divider>
-                <Text type="secondary" style={{ display: 'block', marginBottom: 16, fontSize: 13 }}>
-                  请上传清晰的手指模态图片，这将作为您的身份识别凭证。
-                </Text>
-
-                <Row gutter={[16, 16]}>
-                  {['fingerprint', 'vein_aug', 'vein_bin', 'knuckle'].map((field) => (
-                    <Col span={12} key={field}>
-                      <div style={{ 
-                        background: token.colorFillAlter, 
-                        padding: 12, 
-                        borderRadius: 8,
-                        border: `1px dashed ${token.colorBorder}`
-                      }}>
-                        <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 500 }}>
-                          {field === 'fingerprint' ? '指纹图片' :
-                           field === 'vein_aug' ? '指静脉增强' :
-                           field === 'vein_bin' ? '指静脉二值' : '指节纹图片'}
-                        </div>
-                        <Upload {...uploadProps(field)}>
-                          <Button 
-                            icon={<UploadOutlined />} 
-                            block 
-                            size="middle"
-                            style={{ 
-                              background: '#fff',
-                              borderColor: files[field]?.length ? token.colorSuccess : token.colorBorder
-                            }}
-                          >
-                            {files[field]?.length ? '已选择' : '点击上传'}
-                          </Button>
-                        </Upload>
-                      </div>
-                    </Col>
-                  ))}
-                </Row>
-
-                <Form.Item style={{ marginTop: 40 }}>
+                <Form.Item>
                   <Button
                     type="primary"
                     htmlType="submit"
@@ -265,12 +234,46 @@ const RegisterPage: React.FC = () => {
                       borderRadius: 8, 
                       fontSize: 16, 
                       fontWeight: 600,
-                      boxShadow: '0 4px 14px 0 rgba(24, 144, 255, 0.3)'
+                      background: 'linear-gradient(90deg, #52c41a 0%, #1890ff 100%)',
+                      border: 'none',
+                      boxShadow: '0 4px 14px 0 rgba(82, 196, 26, 0.3)'
                     }}
                   >
-                    提交注册申请
+                    立即注册
                   </Button>
                 </Form.Item>
+
+                <Divider plain style={{ color: token.colorTextQuaternary, fontSize: 13 }}>
+                  必填：上传生物特征图片
+                </Divider>
+
+                <Row gutter={[16, 16]}>
+                  {['fingerprint', 'vein', 'knuckle'].map((field) => (
+                    <Col span={8} key={field}>
+                      <Upload {...uploadProps(field)}>
+                        <Button 
+                          icon={<UploadOutlined />} 
+                          block 
+                          size="large"
+                          style={{ 
+                            height: 48,
+                            fontSize: 15, 
+                            borderRadius: 8,
+                            borderColor: files[field]?.length ? token.colorPrimary : token.colorBorder 
+                          }}
+                        >
+                          {field === 'fingerprint' ? '指纹' :
+                           field === 'vein' ? '指静脉' : '指节纹'}
+                        </Button>
+                      </Upload>
+                    </Col>
+                  ))}
+                </Row>
+                
+                <div style={{ marginTop: 24, textAlign: 'center' }}>
+                  <Text type="secondary">已有账号？ </Text>
+                  <a onClick={() => navigate('/login')} style={{ fontWeight: 500 }}>立即登录</a>
+                </div>
               </Form>
             </div>
           </Col>

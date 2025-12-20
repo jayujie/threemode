@@ -42,11 +42,8 @@ const LoginPage: React.FC = () => {
     if (files.fingerprint?.length) {
       formData.append("fingerprint", files.fingerprint[0].originFileObj);
     }
-    if (files.vein_aug?.length) {
-      formData.append("vein_aug", files.vein_aug[0].originFileObj);
-    }
-    if (files.vein_bin?.length) {
-      formData.append("vein_bin", files.vein_bin[0].originFileObj);
+    if (files.vein?.length) {
+      formData.append("vein", files.vein[0].originFileObj);
     }
     if (files.knuckle?.length) {
       formData.append("knuckle", files.knuckle[0].originFileObj);
@@ -191,33 +188,6 @@ const LoginPage: React.FC = () => {
                   </Button>
                 </Form.Item>
 
-                <Divider plain style={{ color: token.colorTextQuaternary, fontSize: 13 }}>
-                  可选：上传辅助验证图片
-                </Divider>
-
-                <Row gutter={[12, 12]}>
-                  {['fingerprint', 'vein_aug', 'vein_bin', 'knuckle'].map((field) => (
-                    <Col span={12} key={field}>
-                      <Upload {...uploadProps(field)}>
-                        <Button 
-                          icon={<UploadOutlined />} 
-                          block 
-                          size="middle"
-                          style={{ 
-                            fontSize: 13, 
-                            borderRadius: 6,
-                            borderColor: files[field]?.length ? token.colorPrimary : token.colorBorder 
-                          }}
-                        >
-                          {field === 'fingerprint' ? '指纹' :
-                           field === 'vein_aug' ? '静脉增强' :
-                           field === 'vein_bin' ? '静脉二值' : '指节纹'}
-                        </Button>
-                      </Upload>
-                    </Col>
-                  ))}
-                </Row>
-                
                 <div style={{ marginTop: 24, textAlign: 'center' }}>
                   <Text type="secondary">还没有账号？ </Text>
                   <a onClick={() => navigate('/register')} style={{ fontWeight: 500 }}>立即注册</a>

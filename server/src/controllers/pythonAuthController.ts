@@ -5,6 +5,8 @@ import fs from "fs";
 import { config } from "../config/config";
 import { hashFile } from "../utils/fingerHash";
 import { simpleRecognition } from "../utils/pythonRecognition";
+import { binarizeVeinImage } from "../utils/veinBinarize";
+import { v4 as uuidv4 } from "uuid";
 import {
   findUserByUsername,
   findUserById,
@@ -31,18 +33,28 @@ export async function registerPythonFeatures(req: AuthRequest, res: Response) {
     };
 
     const fingerprintFile = files?.["fingerprint"]?.[0];
-    const veinAugFile = files?.["vein_aug"]?.[0];
-    const veinBinFile = files?.["vein_bin"]?.[0];
+    const veinFile = files?.["vein"]?.[0];
     const knuckleFile = files?.["knuckle"]?.[0];
 
-    if (!fingerprintFile || !veinAugFile || !veinBinFile || !knuckleFile) {
-      return res.status(400).json({ message: "必须上传四种手指模态图片" });
+    if (!fingerprintFile || !veinFile || !knuckleFile) {
+      return res.status(400).json({ message: "必须上传三种手指模态图片（指纹、指静脉、指节纹）" });
+    }
+
+    // 自动二值化指静脉图像
+    const veinBinFilename = `vein_bin_${uuidv4()}${path.extname(veinFile.filename)}`;
+    const veinBinPath = path.join(uploadDir, veinBinFilename);
+    
+    try {
+      await binarizeVeinImage(veinFile.path, veinBinPath);
+    } catch (err) {
+      console.error("指静脉二值化失败:", err);
+      return res.status(500).json({ message: "指静脉图像处理失败" });
     }
 
     // 生成文件哈希
     const fingerprintHash = await hashFile(fingerprintFile.path);
-    const veinAugHash = await hashFile(veinAugFile.path);
-    const veinBinHash = await hashFile(veinBinFile.path);
+    const veinAugHash = await hashFile(veinFile.path);
+    const veinBinHash = await hashFile(veinBinPath);
     const knuckleHash = await hashFile(knuckleFile.path);
 
     // 检查是否已有重复特征
@@ -66,8 +78,8 @@ export async function registerPythonFeatures(req: AuthRequest, res: Response) {
       userId: req.user.id,
       fingerprintPath: fingerprintFile.filename,
       fingerJointPath: knuckleFile.filename,
-      fingerVeinPath: veinAugFile.filename,
-      veinBinPath: veinBinFile.filename,
+      fingerVeinPath: veinFile.filename,
+      veinBinPath: veinBinFilename,
       fingerprintHash,
       fingerJointHash: knuckleHash,
       fingerVeinHash: veinAugHash,
@@ -123,14 +135,12 @@ export async function pythonLogin(req: Request, res: Response) {
     console.log('Python登录请求:', { username, fileFields: Object.keys(files || {}) });
 
     const fingerprintFile = files?.["fingerprint"]?.[0];
-    const veinAugFile = files?.["vein_aug"]?.[0];
-    const veinBinFile = files?.["vein_bin"]?.[0];
+    const veinFile = files?.["vein"]?.[0];
     const knuckleFile = files?.["knuckle"]?.[0];
 
     console.log('文件检查:', {
       fingerprint: !!fingerprintFile,
-      vein_aug: !!veinAugFile,
-      vein_bin: !!veinBinFile,
+      vein: !!veinFile,
       knuckle: !!knuckleFile
     });
 
@@ -138,11 +148,10 @@ export async function pythonLogin(req: Request, res: Response) {
       return res.status(400).json({ message: "用户名和密码不能为空" });
     }
 
-    if (!fingerprintFile || !veinAugFile || !veinBinFile || !knuckleFile) {
+    if (!fingerprintFile || !veinFile || !knuckleFile) {
       const missingFiles = [];
       if (!fingerprintFile) missingFiles.push('fingerprint');
-      if (!veinAugFile) missingFiles.push('vein_aug');
-      if (!veinBinFile) missingFiles.push('vein_bin');
+      if (!veinFile) missingFiles.push('vein');
       if (!knuckleFile) missingFiles.push('knuckle');
       
       console.log('缺少文件:', missingFiles);
@@ -150,6 +159,17 @@ export async function pythonLogin(req: Request, res: Response) {
         message: `缺少图片文件: ${missingFiles.join(', ')}`,
         missingFiles 
       });
+    }
+
+    // 自动二值化指静脉图像
+    const veinBinFilename = `vein_bin_login_${uuidv4()}${path.extname(veinFile.filename)}`;
+    const veinBinPath = path.join(path.dirname(veinFile.path), veinBinFilename);
+    
+    try {
+      await binarizeVeinImage(veinFile.path, veinBinPath);
+    } catch (err) {
+      console.error("登录时指静脉二值化失败:", err);
+      return res.status(500).json({ message: "指静脉图像处理失败" });
     }
 
     // 验证用户名密码
@@ -188,14 +208,14 @@ export async function pythonLogin(req: Request, res: Response) {
         },
         {
           fingerprintPath: fingerprintFile.path,
-          veinAugPath: veinAugFile.path,
-          veinBinPath: veinBinFile.path,
+          veinAugPath: veinFile.path,
+          veinBinPath: veinBinPath,
           knucklePath: knuckleFile.path,
         }
       );
 
       // 清理上传的临时文件
-      const tempFiles = [fingerprintFile.path, veinAugFile.path, veinBinFile.path, knuckleFile.path];
+      const tempFiles = [fingerprintFile.path, veinFile.path, veinBinPath, knuckleFile.path];
       for (const tempFile of tempFiles) {
         try {
           if (fs.existsSync(tempFile)) {
@@ -261,7 +281,7 @@ export async function pythonLogin(req: Request, res: Response) {
       console.error("Python识别失败:", recognitionError);
       
       // 清理上传的临时文件
-      const tempFiles = [fingerprintFile.path, veinAugFile.path, veinBinFile.path, knuckleFile.path];
+      const tempFiles = [fingerprintFile.path, veinFile.path, veinBinPath, knuckleFile.path];
       for (const tempFile of tempFiles) {
         try {
           if (fs.existsSync(tempFile)) {
