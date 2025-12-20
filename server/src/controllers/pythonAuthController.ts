@@ -185,9 +185,12 @@ export async function pythonLogin(req: Request, res: Response) {
     }
 
     if (user.status !== "APPROVED") {
+      const statusLabel = user.status === "REJECTED" ? "审核未通过" : 
+                          user.status === "DISABLED" ? "已被禁用" : "待审核";
       return res.status(403).json({
-        message: "账号未通过审核或已被禁用",
+        message: `当前账号${statusLabel}，无法登录`,
         status: user.status,
+        reason: user.reject_reason || null,
       });
     }
 

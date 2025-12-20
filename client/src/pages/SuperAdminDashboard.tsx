@@ -100,11 +100,12 @@ const SuperAdminDashboard: React.FC = () => {
   const openEdit = (record: any) => {
     setEditing(record);
     form.setFieldsValue({
-      realName: record.real_name,
+      realName: record.realName,
       email: record.email,
       phone: record.phone,
       role: record.role,
       status: record.status,
+      rejectReason: record.rejectReason,
     });
     setVisible(true);
   };
@@ -203,7 +204,10 @@ const SuperAdminDashboard: React.FC = () => {
         <div>
           <div>{record.realName || <Text type="secondary">-</Text>}</div>
           <div style={{ fontSize: 12, color: token.colorTextSecondary }}>
-            {record.email || record.phone || <Text type="secondary">未填写</Text>}
+            {record.email || <Text type="secondary">-</Text>}
+          </div>
+          <div style={{ fontSize: 12, color: token.colorTextSecondary }}>
+            {record.phone || <Text type="secondary">-</Text>}
           </div>
         </div>
       ),
@@ -332,6 +336,12 @@ const SuperAdminDashboard: React.FC = () => {
         extra={
           <Space>
             <Button 
+              icon={<UserOutlined />}
+              onClick={() => navigate("/dashboard")}
+            >
+              个人信息
+            </Button>
+            <Button 
               icon={<SearchOutlined />}
               onClick={() => navigate("/search")}
             >
@@ -458,6 +468,29 @@ const SuperAdminDashboard: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
+
+          <Form.Item 
+            noStyle 
+            shouldUpdate={(prevValues, currentValues) => prevValues.status !== currentValues.status}
+          >
+            {({ getFieldValue }) => {
+              const status = getFieldValue('status');
+              if (status === 'REJECTED' || status === 'DISABLED') {
+                return (
+                  <Form.Item 
+                    label={status === 'REJECTED' ? '拒绝原因' : '禁用原因'} 
+                    name="rejectReason"
+                  >
+                    <Input.TextArea 
+                      placeholder={`请输入${status === 'REJECTED' ? '拒绝' : '禁用'}原因，用户登录时将看到此信息`}
+                      rows={3}
+                    />
+                  </Form.Item>
+                );
+              }
+              return null;
+            }}
+          </Form.Item>
         </Form>
       </Modal>
     </div>

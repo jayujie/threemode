@@ -4,6 +4,7 @@ import {
   listUsers,
   findUserById,
   updateUserStatus,
+  updateUserBasicInfo,
   User,
 } from "../models/userModel";
 import { getFingerFeaturesByUserId } from "../models/fingerFeatureModel";
@@ -31,6 +32,7 @@ function buildUserSummary(user: User) {
     phone: user.phone,
     role: user.role,
     status: user.status,
+    rejectReason: user.reject_reason,
     createdAt: user.created_at,
   };
 }
@@ -127,6 +129,12 @@ export async function auditUser(req: AuthRequest, res: Response) {
 
     const newStatus = action === "APPROVE" ? "APPROVED" : "REJECTED";
     await updateUserStatus(id, newStatus);
+
+    if (action === "REJECT" && reason) {
+      await updateUserBasicInfo({ id, rejectReason: reason });
+    } else if (action === "APPROVE") {
+      await updateUserBasicInfo({ id, rejectReason: null });
+    }
 
     await createAuditRecord({
       userId: id,

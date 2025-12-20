@@ -62,7 +62,22 @@ const LoginPage: React.FC = () => {
       else if (user.role === "ADMIN") navigate("/admin");
       else navigate("/super-admin");
     } catch (e: any) {
-      message.error(e?.response?.data?.message || "登录失败");
+      const errorData = e?.response?.data;
+      let errorMsg = errorData?.message || "登录失败";
+      if (errorData?.reason) {
+        errorMsg += `\n原因：${errorData.reason}`;
+      }
+      message.error({
+        content: (
+          <div style={{ fontSize: 16, lineHeight: 1.8 }}>
+            {errorMsg.split('\n').map((line: string, i: number) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+        ),
+        duration: 6,
+        style: { marginTop: '30vh' }
+      });
     } finally {
       setLoading(false);
     }

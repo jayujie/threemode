@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, message, Card, Typography, Space, Tag, Avatar, Row, Col, Statistic, theme, App } from "antd";
+import { Table, Button, Card, Typography, Space, Tag, Avatar, Row, Col, theme, App, Modal, Input } from "antd";
 import { useNavigate } from "react-router-dom";
 import { 
   AuditOutlined, 
@@ -18,7 +18,10 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
-  const { message } = App.useApp();
+  const [rejectModalVisible, setRejectModalVisible] = useState(false);
+  const [rejectingUserId, setRejectingUserId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const { message, modal } = App.useApp();
   const { token } = useToken();
 
   const loadPending = async () => {
@@ -37,13 +40,28 @@ const AdminDashboard: React.FC = () => {
     loadPending();
   }, []);
 
-  const audit = async (id: number, action: "APPROVE" | "REJECT") => {
+  const audit = async (id: number, action: "APPROVE" | "REJECT", reason?: string) => {
     try {
-      await http.post(`/api/admin/users/${id}/audit`, { action });
+      await http.post(`/api/admin/users/${id}/audit`, { action, reason });
       message.success(action === "APPROVE" ? "已通过该用户审核" : "已拒绝该用户申请");
       loadPending();
     } catch (e) {
       message.error("审核操作失败");
+    }
+  };
+
+  const openRejectModal = (id: number) => {
+    setRejectingUserId(id);
+    setRejectReason('');
+    setRejectModalVisible(true);
+  };
+
+  const handleReject = async () => {
+    if (rejectingUserId) {
+      await audit(rejectingUserId, "REJECT", rejectReason);
+      setRejectModalVisible(false);
+      setRejectingUserId(null);
+      setRejectReason('');
     }
   };
 
@@ -109,7 +127,7 @@ const AdminDashboard: React.FC = () => {
             size="small"
             danger
             icon={<CloseCircleOutlined />}
-            onClick={() => audit(record.id, "REJECT")}
+            onClick={() => openRejectModal(record.id)}
           >
             拒绝
           </Button>
@@ -160,14 +178,22 @@ const AdminDashboard: React.FC = () => {
           </Space>
         }
         extra={
-          <Button 
-            type="primary" 
-            ghost
-            icon={<SearchOutlined />} 
-            onClick={() => navigate("/search")}
-          >
-            用户查询
-          </Button>
+          <Space>
+            <Button 
+              icon={<UserOutlined />} 
+              onClick={() => navigate("/dashboard")}
+            >
+              个人信息
+            </Button>
+            <Button 
+              type="primary" 
+              ghost
+              icon={<SearchOutlined />} 
+              onClick={() => navigate("/search")}
+            >
+              用户查询
+            </Button>
+          </Space>
         }
         style={{
           borderRadius: 16,
@@ -186,6 +212,26 @@ const AdminDashboard: React.FC = () => {
           }}
         />
       </Card>
+
+      <Modal
+        title="拒绝申请"
+        open={rejectModalVisible}
+        onOk={handleReject}
+        onCancel={() => setRejectModalVisible(false)}
+        okText="确认拒绝"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+      >
+        <div style={{ marginBottom: 12 }}>
+          <Text type="secondary">请输入拒绝原因（可选），用户登录时将看到此信息：</Text>
+        </div>
+        <Input.TextArea
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+          placeholder="请输入拒绝原因"
+          rows={3}
+        />
+      </Modal>
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
   createUser,
   findUserByUsername,
   findUserById,
+  updateUserBasicInfo,
   User,
 } from "../models/userModel";
 import {
@@ -171,9 +172,11 @@ export async function login(req: Request, res: Response) {
     }
 
     if (user.status === "REJECTED" || user.status === "DISABLED") {
+      const statusLabel = user.status === "REJECTED" ? "审核未通过" : "已被禁用";
       return res.status(403).json({
-        message: "当前账号审核未通过或已被禁用，无法登录",
+        message: `当前账号${statusLabel}，无法登录`,
         status: user.status,
+        reason: user.reject_reason || null,
       });
     }
 
@@ -212,6 +215,40 @@ export async function me(req: AuthRequest, res: Response) {
 }
 
 
+
+export async function updateMyProfile(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "未认证" });
+    }
+
+    const { realName, email, phone } = req.body as {
+      realName?: string;
+      email?: string;
+      phone?: string;
+    };
+
+    await updateUserBasicInfo({
+      id: req.user.id,
+      realName,
+      email,
+      phone,
+    });
+
+    const user = await findUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "用户不存在" });
+    }
+
+    return res.json({
+      message: "更新成功",
+      user: buildUserResponse(user),
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "更新用户信息失败" });
+  }
+}
 
 export async function myFingerFeatures(req: AuthRequest, res: Response) {
   try {

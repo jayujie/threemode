@@ -17,7 +17,18 @@ export async function listUsersHandler(req: Request, res: Response) {
     const role = req.query.role as UserRole | undefined;
     const status = req.query.status as UserStatus | undefined;
     const users = await listUsers({ role, status });
-    return res.json(users);
+    const result = users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      realName: u.real_name,
+      email: u.email,
+      phone: u.phone,
+      role: u.role,
+      status: u.status,
+      rejectReason: u.reject_reason,
+      createdAt: u.created_at,
+    }));
+    return res.json(result);
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "获取用户列表失败" });
@@ -79,12 +90,13 @@ export async function updateUserBySuperAdmin(
 ) {
   try {
     const id = Number(req.params.id);
-    const { realName, email, phone, role, status } = req.body as {
+    const { realName, email, phone, role, status, rejectReason } = req.body as {
       realName?: string;
       email?: string;
       phone?: string;
       role?: UserRole;
       status?: UserStatus;
+      rejectReason?: string;
     };
 
     const user = await findUserById(id);
@@ -94,6 +106,7 @@ export async function updateUserBySuperAdmin(
 
     const before = { ...user };
 
+    const finalRejectReason = (status === 'REJECTED' || status === 'DISABLED') ? rejectReason : null;
     await updateUserBasicInfo({
       id,
       realName,
@@ -101,6 +114,7 @@ export async function updateUserBySuperAdmin(
       phone,
       role,
       status,
+      rejectReason: finalRejectReason,
     });
 
     const updated = await findUserById(id);

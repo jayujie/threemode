@@ -12,6 +12,7 @@ export interface User {
   phone: string | null;
   role: UserRole;
   status: UserStatus;
+  reject_reason: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -126,6 +127,7 @@ export interface UpdateUserBasicInput {
   phone?: string | null;
   role?: UserRole;
   status?: UserStatus;
+  rejectReason?: string | null;
 }
 
 export async function updateUserBasicInfo(
@@ -153,6 +155,10 @@ export async function updateUserBasicInfo(
   if (input.status !== undefined) {
     fields.push("status = ?");
     params.push(input.status);
+  }
+  if (input.rejectReason !== undefined) {
+    fields.push("reject_reason = ?");
+    params.push(input.rejectReason);
   }
 
   if (!fields.length) {

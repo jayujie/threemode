@@ -7,6 +7,7 @@ import {
   register,
   login,
   me,
+  updateMyProfile,
   myFingerFeatures,
 } from "../controllers/authController";
 import { authMiddleware } from "../middleware/auth";
@@ -55,6 +56,9 @@ router.post(
 
 // 获取当前登录用户信息
 router.get("/me", authMiddleware, me);
+
+// 更新当前登录用户基本信息
+router.put("/me", authMiddleware, updateMyProfile);
 
 // 获取当前登录用户的手指模态特征
 router.get("/my-features", authMiddleware, myFingerFeatures);

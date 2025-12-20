@@ -55,27 +55,27 @@ const PythonLogin: React.FC = () => {
       let step = 1;
       
       const interval = setInterval(() => {
-        // 上传图片阶段(0-30%)：快速
+        // 上传图片阶段(0-30%)：每次5-10%
         if (step === 1) {
-          progress += Math.random() * 10 + 5;
+          progress += Math.random() * 5 + 5;
           if (progress >= 30) {
             progress = 30;
             step = 2;
             setAuthStep(2);
           }
         }
-        // 二值化处理阶段(30-55%)：中等速度
+        // 二值化处理阶段(30-55%)：每次3-6%
         else if (step === 2) {
-          progress += Math.random() * 6 + 3;
+          progress += Math.random() * 3 + 3;
           if (progress >= 55) {
             progress = 55;
             step = 3;
             setAuthStep(3);
           }
         }
-        // 模态识别阶段(55-85%)：缓慢
+        // 模态识别阶段(55-85%)：每次0.5-2%
         else if (step === 3) {
-          progress += Math.random() * 2 + 0.5;
+          progress += Math.random() * 1.5 + 0.5;
           if (progress >= 85) {
             progress = 85;
             clearInterval(interval);
@@ -84,7 +84,7 @@ const PythonLogin: React.FC = () => {
         }
         
         setAuthProgress(Math.floor(Math.min(progress, 85)));
-      }, 200);
+      }, 250);
     });
   };
 
@@ -204,7 +204,22 @@ const PythonLogin: React.FC = () => {
           duration: 8,
         });
       } else if (error.response?.data?.message) {
-        message.error(error.response.data.message);
+        const errorData = error.response.data;
+        let errorMsg = errorData.message;
+        if (errorData.reason) {
+          errorMsg += `\n原因：${errorData.reason}`;
+        }
+        message.error({
+          content: (
+            <div style={{ fontSize: 16, lineHeight: 1.8 }}>
+              {errorMsg.split('\n').map((line: string, i: number) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          ),
+          duration: 6,
+          style: { marginTop: '30vh' }
+        });
       } else {
         message.error('登录失败，请检查网络连接');
       }

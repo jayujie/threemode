@@ -13,7 +13,11 @@ import {
   Statistic,
   Divider,
   theme,
-  App
+  App,
+  Button,
+  Modal,
+  Form,
+  Input
 } from "antd";
 import { 
   UserOutlined, 
@@ -22,7 +26,8 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 import http from "../api/http";
 
@@ -43,8 +48,36 @@ const IMAGE_BASE_URL = "http://localhost:3000/uploads/";
 const UserDashboard: React.FC = () => {
   const [user, setUser] = useState<any>();
   const [features, setFeatures] = useState<any | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [form] = Form.useForm();
   const { message } = App.useApp();
   const { token } = useToken();
+
+  const openEditModal = () => {
+    form.setFieldsValue({
+      realName: user?.realName || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      setEditLoading(true);
+      const values = await form.validateFields();
+      const res = await http.put('/api/auth/me', values);
+      setUser(res.data.user);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      message.success('基本信息更新成功');
+      setEditModalVisible(false);
+    } catch (e: any) {
+      message.error(e?.response?.data?.message || '更新失败');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   useEffect(() => {
     http
@@ -81,7 +114,15 @@ const UserDashboard: React.FC = () => {
         </span>
       ),
       children: (
-        <Card variant="borderless" style={{ boxShadow: 'none' }}>
+        <Card 
+          variant="borderless" 
+          style={{ boxShadow: 'none' }}
+          extra={
+            <Button type="primary" icon={<EditOutlined />} onClick={openEditModal}>
+              编辑信息
+            </Button>
+          }
+        >
           <Descriptions 
             column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} 
             bordered 
@@ -89,9 +130,9 @@ const UserDashboard: React.FC = () => {
             labelStyle={{ width: '120px', backgroundColor: '#fafafa' }}
           >
             <Descriptions.Item label="用户名">{user.username}</Descriptions.Item>
-            <Descriptions.Item label="真实姓名">{user.realName}</Descriptions.Item>
-            <Descriptions.Item label="电子邮箱">{user.email}</Descriptions.Item>
-            <Descriptions.Item label="手机号码">{user.phone}</Descriptions.Item>
+            <Descriptions.Item label="真实姓名">{user.realName || <Text type="secondary">-</Text>}</Descriptions.Item>
+            <Descriptions.Item label="电子邮箱">{user.email || <Text type="secondary">-</Text>}</Descriptions.Item>
+            <Descriptions.Item label="手机号码">{user.phone || <Text type="secondary">-</Text>}</Descriptions.Item>
             <Descriptions.Item label="账号状态">
               <Badge status={statusInfo.status} text={statusInfo.text} />
             </Descriptions.Item>
@@ -276,6 +317,28 @@ const UserDashboard: React.FC = () => {
           style={{ padding: '16px 24px' }}
         />
       </Card>
+
+      <Modal
+        title="编辑基本信息"
+        open={editModalVisible}
+        onOk={handleEditSubmit}
+        onCancel={() => setEditModalVisible(false)}
+        confirmLoading={editLoading}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 20 }}>
+          <Form.Item label="真实姓名" name="realName">
+            <Input placeholder="请输入真实姓名" />
+          </Form.Item>
+          <Form.Item label="电子邮箱" name="email">
+            <Input placeholder="请输入电子邮箱" />
+          </Form.Item>
+          <Form.Item label="手机号码" name="phone">
+            <Input placeholder="请输入手机号码" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
